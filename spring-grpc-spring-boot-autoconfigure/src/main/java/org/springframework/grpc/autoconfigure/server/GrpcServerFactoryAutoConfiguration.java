@@ -16,7 +16,6 @@
 package org.springframework.grpc.autoconfigure.server;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
@@ -29,6 +28,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
+import org.springframework.grpc.server.ServletGrpcServerFactory;
 
 import io.grpc.BindableService;
 import io.grpc.servlet.jakarta.GrpcServlet;
@@ -36,7 +36,7 @@ import io.grpc.servlet.jakarta.GrpcServlet;
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for gRPC server-side components.
  * <p>
- * gRPC must be on the classpath and at least one {@link BindableService} bean registered
+ * gRPC must be on the classpath and at least one {@link BindableService} ean registered
  * in the context in order for the auto-configuration to execute.
  *
  * @author David Syer
@@ -57,14 +57,13 @@ public class GrpcServerFactoryAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnWebApplication
-	static class GrpcServletConfiguration {
+	@Import(GrpcServerFactoryConfigurations.ServletServerFactoryConfiguration.class)
+	static class GrpcServletFactoryConfiguration {
 
 		@Bean
-		public ServletRegistrationBean<GrpcServlet> grpcServlet(List<BindableService> services) {
-			List<String> paths = services.stream()
-				.map(service -> "/" + service.bindService().getServiceDescriptor().getName() + "/*")
-				.collect(Collectors.toList());
-			ServletRegistrationBean<GrpcServlet> servlet = new ServletRegistrationBean<>(new GrpcServlet(services));
+		public ServletRegistrationBean<GrpcServlet> grpcServlet(ServletGrpcServerFactory services) {
+			List<String> paths = services.getPaths();
+			ServletRegistrationBean<GrpcServlet> servlet = new ServletRegistrationBean<>(services.buildServlet());
 			servlet.setUrlMappings(paths);
 			return servlet;
 		}

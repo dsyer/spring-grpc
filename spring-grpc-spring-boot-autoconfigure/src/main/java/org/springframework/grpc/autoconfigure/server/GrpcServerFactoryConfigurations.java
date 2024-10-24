@@ -29,12 +29,15 @@ import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.grpc.server.GrpcServerFactory;
+import org.springframework.grpc.server.InternalServerBuilder;
 import org.springframework.grpc.server.NettyGrpcServerFactory;
 import org.springframework.grpc.server.ServerBuilderCustomizer;
+import org.springframework.grpc.server.ServletGrpcServerFactory;
 import org.springframework.grpc.server.ShadedNettyGrpcServerFactory;
 
 import io.grpc.BindableService;
 import io.grpc.netty.NettyServerBuilder;
+import io.grpc.servlet.jakarta.ServletServerBuilder;
 
 /**
  * Configurations for {@link GrpcServerFactory gRPC server factories}.
@@ -89,6 +92,26 @@ class GrpcServerFactoryConfigurations {
 			}
 			NettyGrpcServerFactory factory = new NettyGrpcServerFactory(properties.getAddress(), keyManager,
 					builderCustomizers);
+			grpcServicesProvider.orderedStream().map(BindableService::bindService).forEach(factory::addService);
+			return factory;
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(ServletServerBuilder.class)
+	@ConditionalOnMissingBean(GrpcServerFactory.class)
+	@EnableConfigurationProperties(GrpcServerProperties.class)
+	static class ServletServerFactoryConfiguration {
+
+		@Bean
+		ServletGrpcServerFactory nettyGrpcServerFactory(GrpcServerProperties properties,
+				ObjectProvider<BindableService> grpcServicesProvider,
+				ServerBuilderCustomizers serverBuilderCustomizers) {
+			List<ServerBuilderCustomizer<InternalServerBuilder>> builderCustomizers = List.of(
+					new DefaultServerFactoryPropertyMapper<InternalServerBuilder>(properties)::customizeServerBuilder,
+					serverBuilderCustomizers::customize);
+			ServletGrpcServerFactory factory = new ServletGrpcServerFactory(builderCustomizers);
 			grpcServicesProvider.orderedStream().map(BindableService::bindService).forEach(factory::addService);
 			return factory;
 		}
