@@ -49,9 +49,8 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		GrpcClientRegistryCustomizer stubs() {
-			return registry -> registry.register(
-					() -> registry.channels().createChannel("0.0.0.0:${local.grpc.port:9090}"),
-					SimpleGrpc.SimpleBlockingStub.class);
+			return registry -> registry.channel("0.0.0.0:${local.grpc.port:9090}")
+					.register(SimpleGrpc.SimpleBlockingStub.class);
 		}
 
 	}

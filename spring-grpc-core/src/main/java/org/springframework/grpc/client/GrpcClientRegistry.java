@@ -15,6 +15,7 @@
  */
 package org.springframework.grpc.client;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.context.support.GenericApplicationContext;
@@ -27,41 +28,28 @@ import io.grpc.stub.AbstractFutureStub;
 import io.grpc.stub.AbstractStub;
 
 public class GrpcClientRegistry {
+
 	private final GenericApplicationContext context;
 
 	public GrpcClientRegistry(GenericApplicationContext context) {
 		this.context = context;
 	}
 
-	public <T extends AbstractStub<?>> void register(Class<T> type, Supplier<T> clientFactory) {
-		String beanName = StringUtils.uncapitalize(type.getSimpleName());
-		register(beanName, type, clientFactory);
+	public GrpcClientGroup channel(String name) {
+		return channel(name, ChannelBuilderOptions.defaults());
 	}
 
-	public <T extends AbstractStub<?>> void register(String beanName, Class<T> type, Supplier<T> clientFactory) {
+	public GrpcClientGroup channel(String name, ChannelBuilderOptions options) {
+		return new GrpcClientGroup(name, options);
+	}
+
+	private <T extends AbstractStub<?>> void registerBean(String beanName, Class<T> type, Supplier<T> clientFactory) {
 		context.registerBean(beanName, type, clientFactory, bd -> bd.setLazyInit(true));
 	}
 
-	public <T  extends AbstractStub<?>> void register(Supplier<ManagedChannel> channel, Class<?>... types) {
-		for (Class<?> type : types) {
-			@SuppressWarnings("unchecked")
-			Class<T> stub = (Class<T>) type;
-			String beanName = StringUtils.uncapitalize(type.getSimpleName());
-			registerType(beanName, channel, stub);
-		}
-	}
-
-	public <T  extends AbstractStub<?>> void registerWithPrefix(String prefix, Supplier<ManagedChannel> channel, Class<?>... types) {
-		for (Class<?> type : types) {
-			@SuppressWarnings("unchecked")
-			Class<T> stub = (Class<T>) type;
-			String beanName = prefix + type.getSimpleName();
-			registerType(beanName, channel, stub);
-		}
-	}
-
-	private <T  extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel, Class<T> type) {
-		register(beanName, type, () -> type.cast(create(channel, type)));
+	private <T extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel,
+			Class<T> type) {
+		registerBean(beanName, type, () -> type.cast(create(channel, type)));
 	}
 
 	private AbstractStub<?> create(Supplier<ManagedChannel> channel, Class<? extends AbstractStub<?>> type) {
@@ -80,14 +68,59 @@ public class GrpcClientRegistry {
 	private Object createStub(Supplier<ManagedChannel> channel, Class<?> factory, Class<?> type,
 			String method) {
 		try {
-			return factory.getMethod(method,Channel.class).invoke(null, channel.get());
+			return factory.getMethod(method, Channel.class).invoke(null, channel.get());
 		} catch (Exception e) {
 			throw new IllegalStateException("Failed to create stub", e);
 		}
 	}
 
-	public GrpcChannelFactory channels() {
+	private GrpcChannelFactory channels() {
 		return context.getBean(GrpcChannelFactory.class);
+	}
+
+	public class GrpcClientGroup {
+
+		private final String name;
+		private String prefix = "";
+		private ChannelBuilderOptions options;
+
+		public GrpcClientGroup(String name, ChannelBuilderOptions options) {
+			this.name = name;
+			this.options = options;
+		}
+
+		public <T extends AbstractStub<?>> GrpcClientRegistry register(Class<T> type, Function<Channel, T> factory) {
+			String beanName = type.getSimpleName();
+			if (StringUtils.hasText(prefix)) {
+				beanName = prefix + beanName;
+			} else {
+				beanName = StringUtils.uncapitalize(beanName);
+			}
+			registerBean(beanName, type, () -> factory.apply(channels().createChannel(name, options)));
+			return GrpcClientRegistry.this;
+		}
+
+		public <T extends AbstractStub<?>> GrpcClientRegistry register(Class<?>... types) {
+			for (Class<?> type : types) {
+				String beanName = type.getSimpleName();
+				if (StringUtils.hasText(prefix)) {
+					beanName = prefix + beanName;
+				} else {
+					beanName = StringUtils.uncapitalize(beanName);
+				}
+				@SuppressWarnings("unchecked")
+				Class<T> stub = (Class<T>) type;
+				registerType(beanName, () -> channels().createChannel(name, options), stub);
+			}
+			return GrpcClientRegistry.this;
+		}
+
+		public GrpcClientGroup prefix(String prefix) {
+			GrpcClientGroup group = new GrpcClientGroup(name, options);
+			group.prefix = prefix;
+			return group;
+		}
+
 	}
 
 }

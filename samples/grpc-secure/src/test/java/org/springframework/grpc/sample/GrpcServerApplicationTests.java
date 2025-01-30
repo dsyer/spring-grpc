@@ -118,17 +118,11 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		GrpcClientRegistryCustomizer basicStubs() {
-			return registry -> registry.register(
-					() -> registry.channels().createChannel("stub", ChannelBuilderOptions.defaults()
-					.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user")))),
-					SimpleGrpc.SimpleBlockingStub.class);
-		}
-
-		@Bean
-		GrpcClientRegistryCustomizer unsecuredStubs() {
-			return registry -> registry.registerWithPrefix("unsecured", 
-					() -> registry.channels().createChannel("stub"),
-					SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class);
+			return registry -> registry.channel("stub", ChannelBuilderOptions.defaults()
+					.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
+					.register(SimpleGrpc.SimpleBlockingStub.class)
+					.channel("stub").prefix("unsecured")
+					.register(SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class);
 		}
 
 	}
