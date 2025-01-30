@@ -10,17 +10,15 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.client.EnableGrpcClients;
+import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
-import org.springframework.grpc.test.AutoConfigureInProcessTransport;
-import org.springframework.grpc.test.LocalGrpcPort;
 import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest
-@AutoConfigureInProcessTransport
+// @AutoConfigureInProcessTransport
 public class GrpcServerApplicationTests {
 
 	private static Log log = LogFactory.getLog(GrpcServerApplicationTests.class);
@@ -46,12 +44,14 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration
+	@EnableGrpcClients
 	static class ExtraConfiguration {
 
 		@Bean
-		@Lazy
-		SimpleGrpc.SimpleBlockingStub stub(GrpcChannelFactory channels, @LocalGrpcPort int port) {
-			return SimpleGrpc.newBlockingStub(channels.createChannel("0.0.0.0:" + port));
+		GrpcClientRegistryCustomizer stubs() {
+			return registry -> registry.register(
+					() -> registry.channels().createChannel("0.0.0.0:${local.grpc.port:9090}"),
+					SimpleGrpc.SimpleBlockingStub.class);
 		}
 
 	}

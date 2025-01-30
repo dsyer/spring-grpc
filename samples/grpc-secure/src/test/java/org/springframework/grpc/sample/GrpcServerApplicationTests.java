@@ -15,14 +15,14 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.grpc.client.ChannelBuilderOptions;
-import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.client.EnableGrpcClients;
+import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
 import org.springframework.grpc.client.security.BasicAuthenticationInterceptor;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
-import org.springframework.grpc.test.LocalGrpcPort;
 import org.springframework.test.annotation.DirtiesContext;
 
 import io.grpc.Status.Code;
@@ -41,15 +41,14 @@ public class GrpcServerApplicationTests {
 	}
 
 	@Autowired
-	@Qualifier("stub")
+	@Qualifier("unsecuredSimpleBlockingStub")
 	private SimpleGrpc.SimpleBlockingStub stub;
 
 	@Autowired
-	@Qualifier("reflect")
 	private ServerReflectionGrpc.ServerReflectionStub reflect;
 
 	@Autowired
-	@Qualifier("basic")
+	@Qualifier("simpleBlockingStub")
 	private SimpleGrpc.SimpleBlockingStub basic;
 
 	@Test
@@ -114,25 +113,22 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration
+	@EnableGrpcClients
 	static class ExtraConfiguration {
 
 		@Bean
-		@Lazy
-		SimpleGrpc.SimpleBlockingStub basic(GrpcChannelFactory channels) {
-			return SimpleGrpc.newBlockingStub(channels.createChannel("stub", ChannelBuilderOptions.defaults()
-				.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user")))));
+		GrpcClientRegistryCustomizer basicStubs() {
+			return registry -> registry.register(
+					() -> registry.channels().createChannel("stub", ChannelBuilderOptions.defaults()
+					.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user")))),
+					SimpleGrpc.SimpleBlockingStub.class);
 		}
 
 		@Bean
-		@Lazy
-		SimpleGrpc.SimpleBlockingStub stub(GrpcChannelFactory channels, @LocalGrpcPort int port) {
-			return SimpleGrpc.newBlockingStub(channels.createChannel("stub"));
-		}
-
-		@Bean
-		@Lazy
-		ServerReflectionGrpc.ServerReflectionStub reflect(GrpcChannelFactory channels, @LocalGrpcPort int port) {
-			return ServerReflectionGrpc.newStub(channels.createChannel("stub"));
+		GrpcClientRegistryCustomizer unsecuredStubs() {
+			return registry -> registry.registerWithPrefix("unsecured", 
+					() -> registry.channels().createChannel("stub"),
+					SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class);
 		}
 
 	}
