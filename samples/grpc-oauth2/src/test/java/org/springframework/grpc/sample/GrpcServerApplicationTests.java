@@ -9,12 +9,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.experimental.boot.server.exec.CommonsExecWebServerFactoryBean;
 import org.springframework.experimental.boot.server.exec.MavenClasspathEntry;
@@ -128,7 +128,7 @@ public class GrpcServerApplicationTests {
 		}
 
 		@Bean
-		GrpcClientRegistryCustomizer stubs(ApplicationContext context) {
+		GrpcClientRegistryCustomizer stubs(ObjectProvider<ClientRegistrationRepository> context) {
 			return registry -> registry.channel("stub")
 					.register(SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class)
 					.channel("stub", ChannelBuilderOptions.defaults()
@@ -137,14 +137,13 @@ public class GrpcServerApplicationTests {
 					.register(SimpleGrpc.SimpleBlockingStub.class);
 		}
 
-		private String token(ApplicationContext context) {
-			if (this.token == null) {
+		private String token(ObjectProvider<ClientRegistrationRepository> context) {
+			if (this.token == null) { // ... plus we could check for expiry
 				RestClientClientCredentialsTokenResponseClient creds = new RestClientClientCredentialsTokenResponseClient();
-				ClientRegistrationRepository registry = context.getBean(ClientRegistrationRepository.class);
+				ClientRegistrationRepository registry = context.getObject();
 				ClientRegistration reg = registry.findByRegistrationId("spring");
 				this.token = creds.getTokenResponse(new OAuth2ClientCredentialsGrantRequest(reg))
-						.getAccessToken()
-						.getTokenValue();
+						.getAccessToken().getTokenValue();
 			}
 			return this.token;
 		}
