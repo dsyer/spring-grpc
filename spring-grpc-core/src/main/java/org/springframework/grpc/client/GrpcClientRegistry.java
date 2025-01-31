@@ -19,6 +19,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.grpc.internal.ClasspathScanner;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import io.grpc.Channel;
@@ -40,7 +42,11 @@ public class GrpcClientRegistry {
 	}
 
 	public GrpcClientGroup channel(String name, ChannelBuilderOptions options) {
-		return new GrpcClientGroup(name, options);
+		return new GrpcClientGroup(() -> channels().createChannel(name, options));
+	}
+
+	public GrpcClientGroup channel(Supplier<ManagedChannel> channel) {
+		return new GrpcClientGroup(channel);
 	}
 
 	private <T extends AbstractStub<?>> void registerBean(String beanName, Class<T> type, Supplier<T> clientFactory) {
@@ -56,20 +62,23 @@ public class GrpcClientRegistry {
 		Class<?> factory = type.getEnclosingClass();
 		if (AbstractBlockingStub.class.isAssignableFrom(type)) {
 			return (AbstractStub<?>) createStub(channel, factory, AbstractBlockingStub.class, "newBlockingStub");
-		} else if (AbstractStub.class.isAssignableFrom(type)) {
+		}
+		else if (AbstractStub.class.isAssignableFrom(type)) {
 			return (AbstractStub<?>) createStub(channel, factory, AbstractStub.class, "newStub");
-		} else if (AbstractFutureStub.class.isAssignableFrom(type)) {
+		}
+		else if (AbstractFutureStub.class.isAssignableFrom(type)) {
 			return (AbstractStub<?>) createStub(channel, factory, AbstractFutureStub.class, "newFutureStub");
-		} else {
+		}
+		else {
 			throw new IllegalArgumentException("Unsupported stub type: " + type);
 		}
 	}
 
-	private Object createStub(Supplier<ManagedChannel> channel, Class<?> factory, Class<?> type,
-			String method) {
+	private Object createStub(Supplier<ManagedChannel> channel, Class<?> factory, Class<?> type, String method) {
 		try {
 			return factory.getMethod(method, Channel.class).invoke(null, channel.get());
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new IllegalStateException("Failed to create stub", e);
 		}
 	}
@@ -80,23 +89,23 @@ public class GrpcClientRegistry {
 
 	public class GrpcClientGroup {
 
-		private final String name;
-		private String prefix = "";
-		private ChannelBuilderOptions options;
+		private final Supplier<ManagedChannel> channel;
 
-		public GrpcClientGroup(String name, ChannelBuilderOptions options) {
-			this.name = name;
-			this.options = options;
+		private String prefix = "";
+
+		public GrpcClientGroup(Supplier<ManagedChannel> channel) {
+			this.channel = channel;
 		}
 
 		public <T extends AbstractStub<?>> GrpcClientRegistry register(Class<T> type, Function<Channel, T> factory) {
 			String beanName = type.getSimpleName();
 			if (StringUtils.hasText(prefix)) {
 				beanName = prefix + beanName;
-			} else {
+			}
+			else {
 				beanName = StringUtils.uncapitalize(beanName);
 			}
-			registerBean(beanName, type, () -> factory.apply(channels().createChannel(name, options)));
+			registerBean(beanName, type, () -> factory.apply(channel.get()));
 			return GrpcClientRegistry.this;
 		}
 
@@ -105,18 +114,37 @@ public class GrpcClientRegistry {
 				String beanName = type.getSimpleName();
 				if (StringUtils.hasText(prefix)) {
 					beanName = prefix + beanName;
-				} else {
+				}
+				else {
 					beanName = StringUtils.uncapitalize(beanName);
 				}
 				@SuppressWarnings("unchecked")
 				Class<T> stub = (Class<T>) type;
-				registerType(beanName, () -> channels().createChannel(name, options), stub);
+				registerType(beanName, channel, stub);
+			}
+			return GrpcClientRegistry.this;
+		}
+
+		public <T extends AbstractStub<?>> GrpcClientRegistry scan(Class<T> type, Class<?>... basePackageTypes) {
+			String[] basePackages = new String[basePackageTypes.length];
+			for (int i = 0; i < basePackageTypes.length; i++) {
+				basePackages[i] = ClassUtils.getPackageName(basePackageTypes[i]);
+			}
+			return scan(type, basePackages);
+		}
+
+		public <T extends AbstractStub<?>> GrpcClientRegistry scan(Class<T> type, String... basePackages) {
+			ClasspathScanner scanner = new ClasspathScanner();
+			for (String basePackage : basePackages) {
+				for (Class<?> stub : scanner.scan(basePackage, type)) {
+					register(stub);
+				}
 			}
 			return GrpcClientRegistry.this;
 		}
 
 		public GrpcClientGroup prefix(String prefix) {
-			GrpcClientGroup group = new GrpcClientGroup(name, options);
+			GrpcClientGroup group = new GrpcClientGroup(this.channel);
 			group.prefix = prefix;
 			return group;
 		}

@@ -29,8 +29,9 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 	public void initialize(GenericApplicationContext context) {
 		GrpcClientRegistry registry = new GrpcClientRegistry(context);
 		if (context.getBeanNamesForType(GrpcClientRegistryCustomizer.class).length > 0) {
-			context.getBeansOfType(GrpcClientRegistryCustomizer.class).values()
-					.forEach(customizer -> customizer.customize(registry));
+			context.getBeansOfType(GrpcClientRegistryCustomizer.class)
+				.values()
+				.forEach(customizer -> customizer.customize(registry));
 		}
 	}
 

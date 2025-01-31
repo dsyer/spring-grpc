@@ -15,7 +15,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.grpc.client.ChannelBuilderOptions;
 import org.springframework.grpc.client.EnableGrpcClients;
 import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
@@ -30,6 +29,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.reflection.v1.ServerReflectionGrpc;
 import io.grpc.reflection.v1.ServerReflectionRequest;
 import io.grpc.reflection.v1.ServerReflectionResponse;
+import io.grpc.stub.AbstractBlockingStub;
 import io.grpc.stub.StreamObserver;
 
 @SpringBootTest(properties = { "spring.grpc.server.port=0",
@@ -118,11 +118,14 @@ public class GrpcServerApplicationTests {
 
 		@Bean
 		GrpcClientRegistryCustomizer basicStubs() {
-			return registry -> registry.channel("stub", ChannelBuilderOptions.defaults()
-					.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
-					.register(SimpleGrpc.SimpleBlockingStub.class)
-					.channel("stub").prefix("unsecured")
-					.register(SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class);
+			return registry -> registry
+				.channel("stub",
+						ChannelBuilderOptions.defaults()
+							.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
+				.scan(AbstractBlockingStub.class, SimpleGrpc.class)
+				.channel("stub")
+				.prefix("unsecured")
+				.register(SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class);
 		}
 
 	}

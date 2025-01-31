@@ -16,5 +16,7 @@
 package org.springframework.grpc.client;
 
 public interface GrpcClientRegistryCustomizer {
+
 	void customize(GrpcClientRegistry registry);
+
 }

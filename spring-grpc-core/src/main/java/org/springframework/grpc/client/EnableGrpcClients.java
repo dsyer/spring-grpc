@@ -27,6 +27,6 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @Documented
 @Import(GrpcClientConfiguration.class)
-public @interface  EnableGrpcClients {
-	
+public @interface EnableGrpcClients {
+
 }
