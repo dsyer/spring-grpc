@@ -9,15 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.grpc.client.EnableGrpcClients;
-import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
+import org.springframework.grpc.client.GrpcClient;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest
+@DirtiesContext
 // @AutoConfigureInProcessTransport
 public class GrpcServerApplicationTests {
 
@@ -31,12 +31,10 @@ public class GrpcServerApplicationTests {
 	private SimpleGrpc.SimpleBlockingStub stub;
 
 	@Test
-	@DirtiesContext
 	void contextLoads() {
 	}
 
 	@Test
-	@DirtiesContext
 	void serverResponds() {
 		log.info("Testing");
 		HelloReply response = stub.sayHello(HelloRequest.newBuilder().setName("Alien").build());
@@ -44,15 +42,8 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration
-	@EnableGrpcClients
+	@EnableGrpcClients(@GrpcClient(name = "0.0.0.0:${local.grpc.port:9090}", basePackageTypes =  SimpleGrpc.class))
 	static class ExtraConfiguration {
-
-		@Bean
-		GrpcClientRegistryCustomizer stubs() {
-			return registry -> registry.channel("0.0.0.0:${local.grpc.port:9090}")
-				.register(SimpleGrpc.SimpleBlockingStub.class);
-		}
-
 	}
 
 }
