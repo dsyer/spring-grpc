@@ -22,6 +22,7 @@ import org.springframework.experimental.boot.test.context.EnableDynamicProperty;
 import org.springframework.experimental.boot.test.context.OAuth2ClientProviderIssuerUri;
 import org.springframework.grpc.client.ChannelBuilderOptions;
 import org.springframework.grpc.client.EnableGrpcClients;
+import org.springframework.grpc.client.GrpcClient;
 import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
 import org.springframework.grpc.client.security.BearerTokenAuthenticationInterceptor;
 import org.springframework.grpc.sample.proto.HelloReply;
@@ -113,7 +114,8 @@ public class GrpcServerApplicationTests {
 
 	@TestConfiguration(proxyBeanMethods = false)
 	@EnableDynamicProperty
-	@EnableGrpcClients
+	@EnableGrpcClients(@GrpcClient(name = "stub", types = { SimpleGrpc.SimpleBlockingStub.class,
+			ServerReflectionGrpc.ServerReflectionStub.class }))
 	static class ExtraConfiguration {
 
 		private String token;
@@ -122,20 +124,19 @@ public class GrpcServerApplicationTests {
 		@OAuth2ClientProviderIssuerUri
 		static CommonsExecWebServerFactoryBean authServer() {
 			return CommonsExecWebServerFactoryBean.builder()
-				.defaultSpringBootApplicationMain()
-				.classpath(classpath -> classpath
-					.entries(MavenClasspathEntry.springBootStarter("oauth2-authorization-server")));
+					.defaultSpringBootApplicationMain()
+					.classpath(classpath -> classpath
+							.entries(MavenClasspathEntry.springBootStarter("oauth2-authorization-server")));
 		}
 
 		@Bean
 		GrpcClientRegistryCustomizer stubs(ObjectProvider<ClientRegistrationRepository> context) {
-			return registry -> registry.channel("stub")
-				.register(SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class)
-				.channel("stub",
-						ChannelBuilderOptions.defaults()
-							.withInterceptors(List.of(new BearerTokenAuthenticationInterceptor(() -> token(context)))))
-				.prefix("secure")
-				.register(SimpleGrpc.SimpleBlockingStub.class);
+			return registry -> registry.channel("stub",
+							ChannelBuilderOptions.defaults()
+									.withInterceptors(
+											List.of(new BearerTokenAuthenticationInterceptor(() -> token(context)))))
+					.prefix("secure")
+					.register(SimpleGrpc.SimpleBlockingStub.class);
 		}
 
 		private String token(ObjectProvider<ClientRegistrationRepository> context) {
@@ -144,8 +145,8 @@ public class GrpcServerApplicationTests {
 				ClientRegistrationRepository registry = context.getObject();
 				ClientRegistration reg = registry.findByRegistrationId("spring");
 				this.token = creds.getTokenResponse(new OAuth2ClientCredentialsGrantRequest(reg))
-					.getAccessToken()
-					.getTokenValue();
+						.getAccessToken()
+						.getTokenValue();
 			}
 			return this.token;
 		}

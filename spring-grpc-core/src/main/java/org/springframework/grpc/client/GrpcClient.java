@@ -17,17 +17,29 @@ package org.springframework.grpc.client;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.context.annotation.Import;
+import io.grpc.stub.AbstractBlockingStub;
+import io.grpc.stub.AbstractStub;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-@Import(GrpcClientConfiguration.class)
-public @interface EnableGrpcClients {
-	GrpcClient[] value() default {};
-}
+@Repeatable(EnableGrpcClients.class)
+public @interface GrpcClient {
 
+	String name() default "";
+
+	String prefix() default "";
+
+	Class<? extends AbstractStub<?>>[] types() default {};
+
+	Class<?> type() default AbstractBlockingStub.class;
+
+	Class<?>[] basePackageTypes() default {};
+
+	String[] basePackages() default {};
+}

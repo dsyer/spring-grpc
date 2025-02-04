@@ -15,18 +15,84 @@
  */
 package org.springframework.grpc.client;
 
+import java.util.Set;
+
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Role;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.util.StringUtils;
 
-@Configuration(proxyBeanMethods = false)
-public class GrpcClientConfiguration {
+import io.grpc.stub.AbstractStub;
 
-	@Bean
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public static GrpcClientRegistryPostProcessor grpcClientRegistryPostProcessor() {
-		return new GrpcClientRegistryPostProcessor();
+public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
+
+	@Override
+	public void registerBeanDefinitions(AnnotationMetadata meta, BeanDefinitionRegistry registry) {
+		Set<AnnotationAttributes> attrs = meta.getMergedRepeatableAnnotationAttributes(GrpcClient.class,
+				EnableGrpcClients.class, false);
+		for (AnnotationAttributes attr : attrs) {
+			register(registry, attr, meta.getClassName() + ".");
+		}
+		String name = GrpcClientRegistryPostProcessor.class.getName();
+		if (!registry.containsBeanDefinition(name)) {
+			registry.registerBeanDefinition(name, new RootBeanDefinition(GrpcClientRegistryPostProcessor.class));
+		}
+	}
+
+	private void register(BeanDefinitionRegistry registry, AnnotationAttributes attr, String stem) {
+		String value = attr.getString("name");
+		if (!StringUtils.hasText(value)) {
+			value = "localhost:9090";
+		}
+		String prefix = attr.getString("prefix");
+		Class<?>[] types = attr.getClassArray("types");
+		Class<? extends AbstractStub<?>> type = attr.getClass("type");
+		Class<?>[] basePackageTypes = attr.getClassArray("basePackageTypes");
+		String[] basePackages = attr.getStringArray("basePackages");
+		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
+		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+		String name = value;
+		beanDef.setInstanceSupplier(
+				() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, type, basePackageTypes,
+						basePackages));
+		registry.registerBeanDefinition(stem + value, beanDef);
+	}
+
+	static class SimpleGrpcClientRegistryCustomizer implements GrpcClientRegistryCustomizer {
+
+		private String value;
+		private Class<?>[] types;
+		private String prefix;
+		private Class<?>[] basePackageTypes;
+		private Class<? extends AbstractStub<?>> type;
+		private String[] basePackages;
+
+		public SimpleGrpcClientRegistryCustomizer(String value, String prefix, Class<?>[] types,
+				Class<? extends AbstractStub<?>> type, Class<?>[] basePackageTypes, String[] basePackages) {
+			this.value = value;
+			this.prefix = prefix;
+			this.types = types;
+			this.type = type;
+			this.basePackageTypes = basePackageTypes;
+			this.basePackages = basePackages;
+		}
+
+		@Override
+		public void customize(GrpcClientRegistry registry) {
+			if (this.types.length > 0) {
+				registry.channel(this.value).prefix(prefix).register(this.types);
+			}
+			if (this.basePackageTypes.length > 0) {
+				registry.channel(this.value).prefix(prefix).scan(this.type, this.basePackageTypes);
+			}
+			if (this.basePackages.length > 0) {
+				registry.channel(this.value).prefix(prefix).scan(this.type, this.basePackages);
+			}
+		}
+
 	}
 
 }

@@ -22,16 +22,23 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 
-public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
+public class GrpcClientRegistryPostProcessor
+		implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
 
 	private GenericApplicationContext context;
 
-	public void initialize(GenericApplicationContext context) {
+	private boolean initialized = false;
+
+	private void initialize(GenericApplicationContext context) {
+		if (this.initialized) {
+			return;
+		}
+		this.initialized = true;
 		GrpcClientRegistry registry = new GrpcClientRegistry(context);
 		if (context.getBeanNamesForType(GrpcClientRegistryCustomizer.class).length > 0) {
 			context.getBeansOfType(GrpcClientRegistryCustomizer.class)
-				.values()
-				.forEach(customizer -> customizer.customize(registry));
+					.values()
+					.forEach(customizer -> customizer.customize(registry));
 		}
 	}
 

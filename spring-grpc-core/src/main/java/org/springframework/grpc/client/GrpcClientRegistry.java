@@ -63,11 +63,14 @@ public class GrpcClientRegistry {
 		if (AbstractBlockingStub.class.isAssignableFrom(type)) {
 			return (AbstractStub<?>) createStub(channel, factory, AbstractBlockingStub.class, "newBlockingStub");
 		}
-		else if (AbstractStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, AbstractStub.class, "newStub");
-		}
 		else if (AbstractFutureStub.class.isAssignableFrom(type)) {
 			return (AbstractStub<?>) createStub(channel, factory, AbstractFutureStub.class, "newFutureStub");
+		}
+		else if (type.getSimpleName().startsWith("Reactor")) {
+			return (AbstractStub<?>) createStub(channel, factory, AbstractFutureStub.class, "newReactorStub");
+		}
+		else if (AbstractStub.class.isAssignableFrom(type)) {
+			return (AbstractStub<?>) createStub(channel, factory, AbstractStub.class, "newStub");
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported stub type: " + type);
