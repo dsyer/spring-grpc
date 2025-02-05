@@ -61,23 +61,23 @@ public class GrpcClientRegistry {
 	private AbstractStub<?> create(Supplier<ManagedChannel> channel, Class<? extends AbstractStub<?>> type) {
 		Class<?> factory = type.getEnclosingClass();
 		if (AbstractBlockingStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, AbstractBlockingStub.class, "newBlockingStub");
+			return (AbstractStub<?>) createStub(channel, factory, "newBlockingStub");
 		}
 		else if (AbstractFutureStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, AbstractFutureStub.class, "newFutureStub");
+			return (AbstractStub<?>) createStub(channel, factory, "newFutureStub");
 		}
 		else if (type.getSimpleName().startsWith("Reactor")) {
-			return (AbstractStub<?>) createStub(channel, factory, AbstractFutureStub.class, "newReactorStub");
+			return (AbstractStub<?>) createStub(channel, factory, "newReactorStub");
 		}
 		else if (AbstractStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, AbstractStub.class, "newStub");
+			return (AbstractStub<?>) createStub(channel, factory, "newStub");
 		}
 		else {
 			throw new IllegalArgumentException("Unsupported stub type: " + type);
 		}
 	}
 
-	private Object createStub(Supplier<ManagedChannel> channel, Class<?> factory, Class<?> type, String method) {
+	private Object createStub(Supplier<ManagedChannel> channel, Class<?> factory, String method) {
 		try {
 			return factory.getMethod(method, Channel.class).invoke(null, channel.get());
 		}
