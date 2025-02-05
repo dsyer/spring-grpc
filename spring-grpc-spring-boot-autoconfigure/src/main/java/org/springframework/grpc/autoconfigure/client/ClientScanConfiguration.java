@@ -27,13 +27,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.grpc.autoconfigure.client.GrpcClientProperties.ChannelConfig;
 import org.springframework.grpc.client.EnableGrpcClients;
-import org.springframework.grpc.client.GrpcClientConfiguration;
 import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
+import org.springframework.grpc.client.GrpcClientRegistryPostProcessor;
 
 import io.grpc.stub.AbstractBlockingStub;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnMissingBean(GrpcClientConfiguration.class)
+@ConditionalOnMissingBean(GrpcClientRegistryPostProcessor.class)
 @EnableGrpcClients
 public class ClientScanConfiguration {
 
