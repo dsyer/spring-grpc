@@ -31,7 +31,7 @@ import io.grpc.stub.AbstractStub;
 @Repeatable(EnableGrpcClients.class)
 public @interface GrpcClient {
 
-	String name() default "";
+	String target() default "";
 
 	String prefix() default "";
 

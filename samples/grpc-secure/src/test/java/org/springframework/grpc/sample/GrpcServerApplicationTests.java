@@ -109,7 +109,7 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration
-	@EnableGrpcClients(@GrpcClient(name = "stub", prefix = "unsecured", types = { SimpleGrpc.SimpleBlockingStub.class,
+	@EnableGrpcClients(@GrpcClient(target = "stub", prefix = "unsecured", types = { SimpleGrpc.SimpleBlockingStub.class,
 			ServerReflectionGrpc.ServerReflectionStub.class }))
 	static class ExtraConfiguration {
 
