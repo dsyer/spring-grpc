@@ -14,7 +14,9 @@ import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
-@SpringBootTest(properties = "spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port:9090}",
+@SpringBootTest(
+		properties = { "spring.grpc.server.port=0",
+				"spring.grpc.client.default-channel.address=0.0.0.0:${local.grpc.port}" },
 		useMainMethod = UseMainMethod.ALWAYS)
 @DirtiesContext
 public class GrpcServerApplicationTests {

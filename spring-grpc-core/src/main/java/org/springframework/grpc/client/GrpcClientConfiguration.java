@@ -23,6 +23,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import io.grpc.stub.AbstractStub;
@@ -34,7 +35,14 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		Set<AnnotationAttributes> attrs = meta.getMergedRepeatableAnnotationAttributes(GrpcClient.class,
 				EnableGrpcClients.class, false);
 		for (AnnotationAttributes attr : attrs) {
-			register(registry, attr, meta.getClassName() + ".");
+			register(registry, meta, attr, meta.getClassName() + ".");
+		}
+		// If user adds @EnableGrpcClients without any attributes, register a default
+		if (attrs.isEmpty() && !meta.getClassName().startsWith("org.springframework.grpc")) {
+			@SuppressWarnings("unchecked")
+			Class<? extends AbstractStub<?>> type = (Class<? extends AbstractStub<?>>) AbstractStub.class;
+			register(registry, meta.getClassName() + ".", "", "", new Class<?>[0], type, new Class<?>[0],
+					new String[] { ClassUtils.getPackageName(meta.getClassName()) });
 		}
 		String name = GrpcClientRegistryPostProcessor.class.getName();
 		if (!registry.containsBeanDefinition(name)) {
@@ -42,27 +50,37 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		}
 	}
 
-	private void register(BeanDefinitionRegistry registry, AnnotationAttributes attr, String stem) {
-		String value = attr.getString("target");
-		if (!StringUtils.hasText(value)) {
-			value = "localhost:9090";
-		}
+	private void register(BeanDefinitionRegistry registry, AnnotationMetadata meta, AnnotationAttributes attr,
+			String stem) {
+		String target = attr.getString("target");
 		String prefix = attr.getString("prefix");
 		Class<?>[] types = attr.getClassArray("types");
 		Class<? extends AbstractStub<?>> type = attr.getClass("type");
 		Class<?>[] basePackageTypes = attr.getClassArray("basePackageTypes");
 		String[] basePackages = attr.getStringArray("basePackages");
+		if (types.length == 0 && basePackageTypes.length == 0 && basePackages.length == 0) {
+			basePackages = new String[] { ClassUtils.getPackageName(meta.getClassName()) };
+		}
+		register(registry, stem, target, prefix, types, type, basePackageTypes, basePackages);
+	}
+
+	private void register(BeanDefinitionRegistry registry, String stem, String target, String prefix, Class<?>[] types,
+			Class<? extends AbstractStub<?>> type, Class<?>[] basePackageTypes, String[] basePackages) {
 		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
 		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
-		String name = value;
+		if (!StringUtils.hasText(target)) {
+			// TODO: Use a better default value
+			target = "default";
+		}
+		String name = target;
 		beanDef.setInstanceSupplier(() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, type,
 				basePackageTypes, basePackages));
-		registry.registerBeanDefinition(stem + value, beanDef);
+		registry.registerBeanDefinition(stem + target, beanDef);
 	}
 
 	static class SimpleGrpcClientRegistryCustomizer implements GrpcClientRegistryCustomizer {
 
-		private String value;
+		private String target;
 
 		private Class<?>[] types;
 
@@ -74,9 +92,9 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 
 		private String[] basePackages;
 
-		SimpleGrpcClientRegistryCustomizer(String value, String prefix, Class<?>[] types,
+		SimpleGrpcClientRegistryCustomizer(String target, String prefix, Class<?>[] types,
 				Class<? extends AbstractStub<?>> type, Class<?>[] basePackageTypes, String[] basePackages) {
-			this.value = value;
+			this.target = target;
 			this.prefix = prefix;
 			this.types = types;
 			this.type = type;
@@ -87,13 +105,13 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		@Override
 		public void customize(GrpcClientRegistry registry) {
 			if (this.types.length > 0) {
-				registry.channel(this.value).prefix(this.prefix).register(this.types);
+				registry.channel(this.target).prefix(this.prefix).register(this.types);
 			}
 			if (this.basePackageTypes.length > 0) {
-				registry.channel(this.value).prefix(this.prefix).scan(this.type, this.basePackageTypes);
+				registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackageTypes);
 			}
 			if (this.basePackages.length > 0) {
-				registry.channel(this.value).prefix(this.prefix).scan(this.type, this.basePackages);
+				registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackages);
 			}
 		}
 

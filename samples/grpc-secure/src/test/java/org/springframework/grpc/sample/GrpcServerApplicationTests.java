@@ -33,8 +33,8 @@ import io.grpc.reflection.v1.ServerReflectionResponse;
 import io.grpc.stub.AbstractBlockingStub;
 import io.grpc.stub.StreamObserver;
 
-@SpringBootTest(properties = { "spring.grpc.server.port=0",
-		"spring.grpc.client.channels.stub.address=static://0.0.0.0:${local.grpc.port}" })
+@SpringBootTest(properties = { "debug=true", "spring.grpc.server.port=0",
+		"spring.grpc.client.default-channel.address=static://0.0.0.0:${local.grpc.port}" })
 @DirtiesContext
 public class GrpcServerApplicationTests {
 
