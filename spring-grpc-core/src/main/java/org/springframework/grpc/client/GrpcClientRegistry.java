@@ -50,7 +50,7 @@ public class GrpcClientRegistry {
 	}
 
 	private <T extends AbstractStub<?>> void registerBean(String beanName, Class<T> type, Supplier<T> clientFactory) {
-		context.registerBean(beanName, type, clientFactory, bd -> bd.setLazyInit(true));
+		this.context.registerBean(beanName, type, clientFactory, bd -> bd.setLazyInit(true));
 	}
 
 	private <T extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel,
@@ -87,7 +87,7 @@ public class GrpcClientRegistry {
 	}
 
 	private GrpcChannelFactory channels() {
-		return context.getBean(GrpcChannelFactory.class);
+		return this.context.getBean(GrpcChannelFactory.class);
 	}
 
 	public class GrpcClientGroup {
@@ -102,28 +102,28 @@ public class GrpcClientRegistry {
 
 		public <T extends AbstractStub<?>> GrpcClientRegistry register(Class<T> type, Function<Channel, T> factory) {
 			String beanName = type.getSimpleName();
-			if (StringUtils.hasText(prefix)) {
-				beanName = prefix + beanName;
+			if (StringUtils.hasText(this.prefix)) {
+				beanName = this.prefix + beanName;
 			}
 			else {
 				beanName = StringUtils.uncapitalize(beanName);
 			}
-			registerBean(beanName, type, () -> factory.apply(channel.get()));
+			registerBean(beanName, type, () -> factory.apply(this.channel.get()));
 			return GrpcClientRegistry.this;
 		}
 
 		public <T extends AbstractStub<?>> GrpcClientRegistry register(Class<?>... types) {
 			for (Class<?> type : types) {
 				String beanName = type.getSimpleName();
-				if (StringUtils.hasText(prefix)) {
-					beanName = prefix + beanName;
+				if (StringUtils.hasText(this.prefix)) {
+					beanName = this.prefix + beanName;
 				}
 				else {
 					beanName = StringUtils.uncapitalize(beanName);
 				}
 				@SuppressWarnings("unchecked")
 				Class<T> stub = (Class<T>) type;
-				registerType(beanName, channel, stub);
+				registerType(beanName, this.channel, stub);
 			}
 			return GrpcClientRegistry.this;
 		}

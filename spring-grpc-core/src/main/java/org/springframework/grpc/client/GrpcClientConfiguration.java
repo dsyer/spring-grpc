@@ -55,22 +55,26 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
 		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		String name = value;
-		beanDef.setInstanceSupplier(
-				() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, type, basePackageTypes,
-						basePackages));
+		beanDef.setInstanceSupplier(() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, type,
+				basePackageTypes, basePackages));
 		registry.registerBeanDefinition(stem + value, beanDef);
 	}
 
 	static class SimpleGrpcClientRegistryCustomizer implements GrpcClientRegistryCustomizer {
 
 		private String value;
+
 		private Class<?>[] types;
+
 		private String prefix;
+
 		private Class<?>[] basePackageTypes;
+
 		private Class<? extends AbstractStub<?>> type;
+
 		private String[] basePackages;
 
-		public SimpleGrpcClientRegistryCustomizer(String value, String prefix, Class<?>[] types,
+		SimpleGrpcClientRegistryCustomizer(String value, String prefix, Class<?>[] types,
 				Class<? extends AbstractStub<?>> type, Class<?>[] basePackageTypes, String[] basePackages) {
 			this.value = value;
 			this.prefix = prefix;
@@ -83,13 +87,13 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		@Override
 		public void customize(GrpcClientRegistry registry) {
 			if (this.types.length > 0) {
-				registry.channel(this.value).prefix(prefix).register(this.types);
+				registry.channel(this.value).prefix(this.prefix).register(this.types);
 			}
 			if (this.basePackageTypes.length > 0) {
-				registry.channel(this.value).prefix(prefix).scan(this.type, this.basePackageTypes);
+				registry.channel(this.value).prefix(this.prefix).scan(this.type, this.basePackageTypes);
 			}
 			if (this.basePackages.length > 0) {
-				registry.channel(this.value).prefix(prefix).scan(this.type, this.basePackages);
+				registry.channel(this.value).prefix(this.prefix).scan(this.type, this.basePackages);
 			}
 		}
 

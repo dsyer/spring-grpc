@@ -42,13 +42,15 @@ public class GrpcServerApplicationTests {
 		log.info("Testing");
 		Mono<HelloReply> reply = stub.sayHello(HelloRequest.newBuilder().setName("Alien").build());
 		StepVerifier.create(reply.map(response -> response.getMessage()))
-				.expectNext("Hello ==> Alien")
-				.verifyComplete();
+			.expectNext("Hello ==> Alien")
+			.verifyComplete();
 	}
 
 	@TestConfiguration
-	@EnableGrpcClients(@GrpcClient(target = "0.0.0.0:${local.grpc.port:9090}", types = ReactorSimpleGrpc.ReactorSimpleStub.class))
+	@EnableGrpcClients(@GrpcClient(target = "0.0.0.0:${local.grpc.port:9090}",
+			types = ReactorSimpleGrpc.ReactorSimpleStub.class))
 	static class ExtraConfiguration {
+
 	}
 
 }

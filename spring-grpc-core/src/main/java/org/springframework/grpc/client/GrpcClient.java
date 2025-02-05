@@ -42,4 +42,5 @@ public @interface GrpcClient {
 	Class<?>[] basePackageTypes() default {};
 
 	String[] basePackages() default {};
+
 }
