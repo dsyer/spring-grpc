@@ -114,7 +114,7 @@ public class GrpcServerApplicationTests {
 
 	@TestConfiguration(proxyBeanMethods = false)
 	@EnableDynamicProperty
-	@EnableGrpcClients(@GrpcClient(name = "stub", types = { SimpleGrpc.SimpleBlockingStub.class,
+	@EnableGrpcClients(@GrpcClient(target = "stub", types = { SimpleGrpc.SimpleBlockingStub.class,
 			ServerReflectionGrpc.ServerReflectionStub.class }))
 	static class ExtraConfiguration {
 

@@ -43,7 +43,7 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 	}
 
 	private void register(BeanDefinitionRegistry registry, AnnotationAttributes attr, String stem) {
-		String value = attr.getString("name");
+		String value = attr.getString("target");
 		if (!StringUtils.hasText(value)) {
 			value = "localhost:9090";
 		}
