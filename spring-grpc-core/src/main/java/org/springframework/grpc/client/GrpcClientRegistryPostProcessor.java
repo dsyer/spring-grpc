@@ -22,8 +22,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 
-public class GrpcClientRegistryPostProcessor
-		implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
+public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
 
 	private GenericApplicationContext context;
 
@@ -37,8 +36,8 @@ public class GrpcClientRegistryPostProcessor
 		GrpcClientRegistry registry = new GrpcClientRegistry(context);
 		if (context.getBeanNamesForType(GrpcClientRegistryCustomizer.class).length > 0) {
 			context.getBeansOfType(GrpcClientRegistryCustomizer.class)
-					.values()
-					.forEach(customizer -> customizer.customize(registry));
+				.values()
+				.forEach(customizer -> customizer.customize(registry));
 		}
 	}
 
@@ -51,8 +50,8 @@ public class GrpcClientRegistryPostProcessor
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		if (applicationContext instanceof GenericApplicationContext context) {
-			this.context = context;
+		if (applicationContext instanceof GenericApplicationContext generic) {
+			this.context = generic;
 		}
 	}
 

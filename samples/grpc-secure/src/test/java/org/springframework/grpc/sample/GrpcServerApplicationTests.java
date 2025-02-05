@@ -109,17 +109,17 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration
-	@EnableGrpcClients(@GrpcClient(target = "stub", prefix = "unsecured", types = { SimpleGrpc.SimpleBlockingStub.class,
-			ServerReflectionGrpc.ServerReflectionStub.class }))
+	@EnableGrpcClients(@GrpcClient(target = "stub", prefix = "unsecured",
+			types = { SimpleGrpc.SimpleBlockingStub.class, ServerReflectionGrpc.ServerReflectionStub.class }))
 	static class ExtraConfiguration {
 
 		@Bean
 		GrpcClientRegistryCustomizer basicStubs() {
 			return registry -> registry
-					.channel("stub",
-							ChannelBuilderOptions.defaults()
-									.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
-					.scan(AbstractBlockingStub.class, SimpleGrpc.class);
+				.channel("stub",
+						ChannelBuilderOptions.defaults()
+							.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
+				.scan(AbstractBlockingStub.class, SimpleGrpc.class);
 		}
 
 	}

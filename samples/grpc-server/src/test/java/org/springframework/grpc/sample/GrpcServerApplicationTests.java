@@ -42,8 +42,9 @@ public class GrpcServerApplicationTests {
 	}
 
 	@TestConfiguration
-	@EnableGrpcClients(@GrpcClient(target = "0.0.0.0:${local.grpc.port:9090}", basePackageTypes =  SimpleGrpc.class))
+	@EnableGrpcClients(@GrpcClient(target = "0.0.0.0:${local.grpc.port:9090}", basePackageTypes = SimpleGrpc.class))
 	static class ExtraConfiguration {
+
 	}
 
 }
