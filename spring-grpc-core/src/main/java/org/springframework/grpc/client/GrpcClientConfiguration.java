@@ -15,6 +15,7 @@
  */
 package org.springframework.grpc.client;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.grpc.internal.ClasspathScanner;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -104,14 +106,23 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 
 		@Override
 		public void customize(GrpcClientRegistry registry) {
-			if (this.types.length > 0) {
-				registry.channel(this.target).prefix(this.prefix).register(this.types);
+			Set<Class<?>> candidates = new HashSet<>();
+			ClasspathScanner scanner = new ClasspathScanner();
+			for (String basePackage : this.basePackages) {
+				for (Class<?> stub : scanner.scan(basePackage, this.type)) {
+					candidates.add(stub);
+				}
 			}
-			if (this.basePackageClasses.length > 0) {
-				registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackageClasses);
+			for (Class<?> basePackage : this.basePackageClasses) {
+				for (Class<?> stub : scanner.scan(ClassUtils.getPackageName(basePackage), this.type)) {
+					candidates.add(stub);
+				}
 			}
-			if (this.basePackages.length > 0) {
-				registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackages);
+			for (Class<?> candidate : this.types) {
+				candidates.add(candidate);
+			}
+			if (!candidates.isEmpty()) {
+				registry.channel(this.target).prefix(this.prefix).register(candidates.toArray(new Class<?>[0]));
 			}
 		}
 
