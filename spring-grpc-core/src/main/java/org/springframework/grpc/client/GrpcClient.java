@@ -39,7 +39,7 @@ public @interface GrpcClient {
 
 	Class<?> type() default AbstractBlockingStub.class;
 
-	Class<?>[] basePackageTypes() default {};
+	Class<?>[] basePackageClasses() default {};
 
 	String[] basePackages() default {};
 
