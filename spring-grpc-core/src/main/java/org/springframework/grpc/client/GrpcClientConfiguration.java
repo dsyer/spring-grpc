@@ -26,7 +26,6 @@ import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.grpc.internal.ClasspathScanner;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
 
 import io.grpc.stub.AbstractStub;
 
@@ -70,10 +69,6 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 			Class<? extends AbstractStub<?>> type, Class<?>[] basePackageClasses, String[] basePackages) {
 		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
 		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
-		if (!StringUtils.hasText(target)) {
-			// TODO: Use a better default value
-			target = "default";
-		}
 		String name = target;
 		beanDef.setInstanceSupplier(() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, type,
 				basePackageClasses, basePackages));

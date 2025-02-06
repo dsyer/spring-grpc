@@ -31,7 +31,8 @@ import io.grpc.stub.AbstractStub;
 @Repeatable(EnableGrpcClients.class)
 public @interface GrpcClient {
 
-	String target() default "";
+	// TODO: is there a better default value?
+	String target() default "default";
 
 	String prefix() default "";
 
