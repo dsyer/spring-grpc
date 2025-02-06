@@ -128,10 +128,10 @@ public class GrpcClientRegistry {
 			return GrpcClientRegistry.this;
 		}
 
-		public <T extends AbstractStub<?>> GrpcClientRegistry scan(Class<T> type, Class<?>... basePackageTypes) {
-			String[] basePackages = new String[basePackageTypes.length];
-			for (int i = 0; i < basePackageTypes.length; i++) {
-				basePackages[i] = ClassUtils.getPackageName(basePackageTypes[i]);
+		public <T extends AbstractStub<?>> GrpcClientRegistry scan(Class<T> type, Class<?>... basePackageClasses) {
+			String[] basePackages = new String[basePackageClasses.length];
+			for (int i = 0; i < basePackageClasses.length; i++) {
+				basePackages[i] = ClassUtils.getPackageName(basePackageClasses[i]);
 			}
 			return scan(type, basePackages);
 		}
