@@ -16,7 +16,9 @@
 package org.springframework.grpc.client;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -35,17 +37,24 @@ public class GrpcClientRegistry {
 
 	private List<StubFactory<?>> factories = new ArrayList<>();
 
+	private Map<Class<?>, StubFactory<?>> factoriesByClass = new HashMap<>();
+
 	private final GenericApplicationContext context;
 
 	public GrpcClientRegistry(GenericApplicationContext context) {
 		this.context = context;
-		this.factories.add(new BlockingStubFactory());
-		this.factories.add(new FutureStubFactory());
-		this.factories.add(new ReactorStubFactory());
-		this.factories.add(new SimpleStubFactory());
-		SpringFactoriesLoader.loadFactories(StubFactory.class, getClass().getClassLoader())
-			.forEach(this.factories::add);
+		stubFactory(new BlockingStubFactory());
+		stubFactory(new FutureStubFactory());
+		stubFactory(new ReactorStubFactory());
+		stubFactory(new SimpleStubFactory());
+		SpringFactoriesLoader.loadFactories(StubFactory.class, getClass().getClassLoader()).forEach(this::stubFactory);
 		AnnotationAwareOrderComparator.sort(this.factories);
+	}
+
+	public GrpcClientRegistry stubFactory(StubFactory<? extends AbstractStub<?>> factory) {
+		this.factories.add(factory);
+		this.factoriesByClass.put(factory.getClass(), factory);
+		return this;
 	}
 
 	public GrpcClientGroup channel(String name) {
@@ -66,13 +75,10 @@ public class GrpcClientRegistry {
 
 	private <T extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel,
 			Class<T> type) {
-		registerBean(beanName, type, () -> type.cast(create(channel, type)));
-	}
-
-	private AbstractStub<?> create(Supplier<ManagedChannel> channel, Class<? extends AbstractStub<?>> type) {
 		for (StubFactory<? extends AbstractStub<?>> factory : this.factories) {
 			if (factory.supports(type)) {
-				return factory.create(channel, type);
+				registerBean(beanName, type, () -> type.cast(factory.create(channel, type)));
+				return;
 			}
 		}
 		throw new IllegalArgumentException("Unsupported stub type: " + type);
@@ -86,6 +92,8 @@ public class GrpcClientRegistry {
 
 		private final Supplier<ManagedChannel> channel;
 
+		// TODO: make the union of types in register and scan for each prefix before
+		// registering any bean definitions
 		private String prefix = "";
 
 		public GrpcClientGroup(Supplier<ManagedChannel> channel) {
@@ -120,7 +128,7 @@ public class GrpcClientRegistry {
 			return GrpcClientRegistry.this;
 		}
 
-		public <T extends AbstractStub<?>> GrpcClientRegistry scan(Class<T> type, Class<?>... basePackageClasses) {
+		public <T extends StubFactory<?>> GrpcClientRegistry scan(Class<T> type, Class<?>... basePackageClasses) {
 			String[] basePackages = new String[basePackageClasses.length];
 			for (int i = 0; i < basePackageClasses.length; i++) {
 				basePackages[i] = ClassUtils.getPackageName(basePackageClasses[i]);
@@ -128,10 +136,10 @@ public class GrpcClientRegistry {
 			return scan(type, basePackages);
 		}
 
-		public <T extends AbstractStub<?>> GrpcClientRegistry scan(Class<T> type, String... basePackages) {
+		public <T extends StubFactory<?>> GrpcClientRegistry scan(Class<T> type, String... basePackages) {
 			ClasspathScanner scanner = new ClasspathScanner();
 			for (String basePackage : basePackages) {
-				for (Class<?> stub : scanner.scan(basePackage, type)) {
+				for (Class<?> stub : scanner.scan(basePackage, AbstractStub.class)) {
 					register(stub);
 				}
 			}

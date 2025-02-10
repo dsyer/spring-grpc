@@ -15,6 +15,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.grpc.client.BlockingStubFactory;
 import org.springframework.grpc.client.ChannelBuilderOptions;
 import org.springframework.grpc.client.EnableGrpcClients;
 import org.springframework.grpc.client.GrpcClient;
@@ -30,7 +31,6 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.reflection.v1.ServerReflectionGrpc;
 import io.grpc.reflection.v1.ServerReflectionRequest;
 import io.grpc.reflection.v1.ServerReflectionResponse;
-import io.grpc.stub.AbstractBlockingStub;
 import io.grpc.stub.StreamObserver;
 
 @SpringBootTest(properties = { "debug=true", "spring.grpc.server.port=0",
@@ -119,7 +119,7 @@ public class GrpcServerApplicationTests {
 				.channel("stub",
 						ChannelBuilderOptions.defaults()
 							.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
-				.scan(AbstractBlockingStub.class, SimpleGrpc.class);
+				.scan(BlockingStubFactory.class, SimpleGrpc.class);
 		}
 
 	}

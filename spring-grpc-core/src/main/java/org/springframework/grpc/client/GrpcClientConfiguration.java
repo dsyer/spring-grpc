@@ -15,7 +15,6 @@
  */
 package org.springframework.grpc.client;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -24,10 +23,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.grpc.internal.ClasspathScanner;
 import org.springframework.util.ClassUtils;
-
-import io.grpc.stub.AbstractStub;
 
 public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 
@@ -49,7 +45,7 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		String target = attr.getString("target");
 		String prefix = attr.getString("prefix");
 		Class<?>[] types = attr.getClassArray("types");
-		Class<? extends AbstractStub<?>> type = attr.getClass("type");
+		Class<? extends StubFactory<?>> type = attr.getClass("type");
 		Class<?>[] basePackageClasses = attr.getClassArray("basePackageClasses");
 		String[] basePackages = attr.getStringArray("basePackages");
 		if (types.length == 0 && basePackageClasses.length == 0 && basePackages.length == 0) {
@@ -59,7 +55,7 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 	}
 
 	private void register(BeanDefinitionRegistry registry, String stem, String target, String prefix, Class<?>[] types,
-			Class<?> type, Class<?>[] basePackageClasses, String[] basePackages) {
+			Class<? extends StubFactory<?>> type, Class<?>[] basePackageClasses, String[] basePackages) {
 		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
 		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		String name = target;
@@ -78,12 +74,12 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 
 		private Class<?>[] basePackageClasses;
 
-		private Class<?> type;
+		private Class<? extends StubFactory<?>> type;
 
 		private String[] basePackages;
 
-		SimpleGrpcClientRegistryCustomizer(String target, String prefix, Class<?>[] types, Class<?> type,
-				Class<?>[] basePackageClasses, String[] basePackages) {
+		SimpleGrpcClientRegistryCustomizer(String target, String prefix, Class<?>[] types,
+				Class<? extends StubFactory<?>> type, Class<?>[] basePackageClasses, String[] basePackages) {
 			this.target = target;
 			this.prefix = prefix;
 			this.types = types;
@@ -94,24 +90,9 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 
 		@Override
 		public void customize(GrpcClientRegistry registry) {
-			Set<Class<?>> candidates = new HashSet<>();
-			ClasspathScanner scanner = new ClasspathScanner();
-			for (String basePackage : this.basePackages) {
-				for (Class<?> stub : scanner.scan(basePackage, this.type)) {
-					candidates.add(stub);
-				}
-			}
-			for (Class<?> basePackage : this.basePackageClasses) {
-				for (Class<?> stub : scanner.scan(ClassUtils.getPackageName(basePackage), this.type)) {
-					candidates.add(stub);
-				}
-			}
-			for (Class<?> candidate : this.types) {
-				candidates.add(candidate);
-			}
-			if (!candidates.isEmpty()) {
-				registry.channel(this.target).prefix(this.prefix).register(candidates.toArray(new Class<?>[0]));
-			}
+			registry.channel(this.target).prefix(this.prefix).register(this.types);
+			registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackageClasses);
+			registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackages);
 		}
 
 	}
