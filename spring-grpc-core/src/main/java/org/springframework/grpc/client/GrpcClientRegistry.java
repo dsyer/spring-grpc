@@ -33,25 +33,44 @@ import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.AbstractStub;
 
-public class GrpcClientRegistry {
+public class GrpcClientRegistry implements AutoCloseable {
 
 	private List<StubFactory<?>> factories = new ArrayList<>();
 
 	private Map<Class<?>, StubFactory<?>> factoriesByClass = new HashMap<>();
 
+	private Map<String, DeferredBeanDefinition<?>> beans = new HashMap<>();
+
 	private final GenericApplicationContext context;
 
 	public GrpcClientRegistry(GenericApplicationContext context) {
 		this.context = context;
-		stubFactory(new BlockingStubFactory());
-		stubFactory(new FutureStubFactory());
-		stubFactory(new ReactorStubFactory());
-		stubFactory(new SimpleStubFactory());
-		SpringFactoriesLoader.loadFactories(StubFactory.class, getClass().getClassLoader()).forEach(this::stubFactory);
-		AnnotationAwareOrderComparator.sort(this.factories);
+		stubs(new BlockingStubFactory());
+		stubs(new FutureStubFactory());
+		stubs(new ReactorStubFactory());
+		stubs(new SimpleStubFactory());
+		SpringFactoriesLoader.loadFactories(StubFactory.class, getClass().getClassLoader()).forEach(this::stubs);
 	}
 
-	public GrpcClientRegistry stubFactory(StubFactory<? extends AbstractStub<?>> factory) {
+	@Override
+	public void close() {
+		for (Map.Entry<String, DeferredBeanDefinition<?>> entry : this.beans.entrySet()) {
+			cheekyRegisterBean(entry.getKey(), entry.getValue().type(), entry.getValue().supplier());
+		}
+		this.beans.clear();
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> void cheekyRegisterBean(String key, Class<?> type, Supplier<?> supplier) {
+		Supplier<T> real = (Supplier<T>) supplier;
+		Class<T> stub = (Class<T>) type;
+		this.context.registerBean(key, stub, real, bd -> bd.setLazyInit(true));
+	}
+
+	public GrpcClientRegistry stubs(StubFactory<? extends AbstractStub<?>> factory) {
+		if (this.factoriesByClass.containsKey(factory.getClass())) {
+			this.factories.remove(this.factoriesByClass.get(factory.getClass()));
+		}
 		this.factories.add(factory);
 		this.factoriesByClass.put(factory.getClass(), factory);
 		return this;
@@ -75,9 +94,11 @@ public class GrpcClientRegistry {
 
 	private <T extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel,
 			Class<T> type) {
+		AnnotationAwareOrderComparator.sort(this.factories);
 		for (StubFactory<? extends AbstractStub<?>> factory : this.factories) {
 			if (factory.supports(type)) {
-				registerBean(beanName, type, () -> type.cast(factory.create(channel, type)));
+				this.beans.put(beanName,
+						new DeferredBeanDefinition<>(type, () -> type.cast(factory.create(channel, type))));
 				return;
 			}
 		}
@@ -88,12 +109,15 @@ public class GrpcClientRegistry {
 		return this.context.getBean(GrpcChannelFactory.class);
 	}
 
+	private static record DeferredBeanDefinition<T extends AbstractStub<?>>(Class<T> type, Supplier<T> supplier) {
+	}
+
 	public class GrpcClientGroup {
+
+		private ClasspathScanner scanner = new ClasspathScanner();
 
 		private final Supplier<ManagedChannel> channel;
 
-		// TODO: make the union of types in register and scan for each prefix before
-		// registering any bean definitions
 		private String prefix = "";
 
 		public GrpcClientGroup(Supplier<ManagedChannel> channel) {
@@ -104,8 +128,7 @@ public class GrpcClientRegistry {
 			String beanName = type.getSimpleName();
 			if (StringUtils.hasText(this.prefix)) {
 				beanName = this.prefix + beanName;
-			}
-			else {
+			} else {
 				beanName = StringUtils.uncapitalize(beanName);
 			}
 			registerBean(beanName, type, () -> factory.apply(this.channel.get()));
@@ -117,8 +140,7 @@ public class GrpcClientRegistry {
 				String beanName = type.getSimpleName();
 				if (StringUtils.hasText(this.prefix)) {
 					beanName = this.prefix + beanName;
-				}
-				else {
+				} else {
 					beanName = StringUtils.uncapitalize(beanName);
 				}
 				@SuppressWarnings("unchecked")
@@ -137,9 +159,8 @@ public class GrpcClientRegistry {
 		}
 
 		public <T extends StubFactory<?>> GrpcClientRegistry scan(Class<T> type, String... basePackages) {
-			ClasspathScanner scanner = new ClasspathScanner();
 			for (String basePackage : basePackages) {
-				for (Class<?> stub : scanner.scan(basePackage, AbstractStub.class)) {
+				for (Class<?> stub : this.scanner.scan(basePackage, AbstractStub.class)) {
 					register(stub);
 				}
 			}

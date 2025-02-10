@@ -39,6 +39,7 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 				.values()
 				.forEach(customizer -> customizer.customize(registry));
 		}
+		registry.close();
 	}
 
 	@Override
