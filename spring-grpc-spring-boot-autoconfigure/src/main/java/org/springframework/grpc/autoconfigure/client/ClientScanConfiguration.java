@@ -29,8 +29,7 @@ import org.springframework.grpc.autoconfigure.client.GrpcClientProperties.Channe
 import org.springframework.grpc.client.EnableGrpcClients;
 import org.springframework.grpc.client.GrpcClientRegistryCustomizer;
 import org.springframework.grpc.client.GrpcClientRegistryPostProcessor;
-
-import io.grpc.stub.AbstractBlockingStub;
+import org.springframework.grpc.client.SimpleStubFactory;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(GrpcClientRegistryPostProcessor.class)
@@ -48,7 +47,7 @@ public class ClientScanConfiguration {
 		boolean hasDefaultChannel = binder.bind("spring.grpc.client.default-channel", ChannelConfig.class).isBound();
 		return registry -> {
 			if (hasDefaultChannel) {
-				registry.channel("default").scan(AbstractBlockingStub.class, packages.toArray(new String[0]));
+				registry.channel("default").scan(SimpleStubFactory.class, packages.toArray(new String[0]));
 			}
 		};
 	}
