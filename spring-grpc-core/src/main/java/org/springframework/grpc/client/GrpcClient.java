@@ -38,6 +38,8 @@ public @interface GrpcClient {
 
 	Class<? extends AbstractStub<?>>[] types() default {};
 
+	// TODO: something with a factory strategy? The reactive stubs are not
+	// recognized this way because they don't have a unique base class.
 	Class<?> type() default AbstractBlockingStub.class;
 
 	Class<?>[] basePackageClasses() default {};
