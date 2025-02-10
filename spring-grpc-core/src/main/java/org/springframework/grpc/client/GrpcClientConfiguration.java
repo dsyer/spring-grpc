@@ -38,13 +38,6 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		for (AnnotationAttributes attr : attrs) {
 			register(registry, meta, attr, meta.getClassName() + ".");
 		}
-		// If user adds @EnableGrpcClients without any attributes, register a default
-		if (attrs.isEmpty() && !meta.getClassName().startsWith("org.springframework.grpc")) {
-			@SuppressWarnings("unchecked")
-			Class<? extends AbstractStub<?>> type = (Class<? extends AbstractStub<?>>) AbstractStub.class;
-			register(registry, meta.getClassName() + ".", "", "", new Class<?>[0], type, new Class<?>[0],
-					new String[] { ClassUtils.getPackageName(meta.getClassName()) });
-		}
 		String name = GrpcClientRegistryPostProcessor.class.getName();
 		if (!registry.containsBeanDefinition(name)) {
 			registry.registerBeanDefinition(name, new RootBeanDefinition(GrpcClientRegistryPostProcessor.class));
@@ -66,7 +59,7 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 	}
 
 	private void register(BeanDefinitionRegistry registry, String stem, String target, String prefix, Class<?>[] types,
-			Class<? extends AbstractStub<?>> type, Class<?>[] basePackageClasses, String[] basePackages) {
+			Class<?> type, Class<?>[] basePackageClasses, String[] basePackages) {
 		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
 		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		String name = target;
@@ -85,12 +78,12 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 
 		private Class<?>[] basePackageClasses;
 
-		private Class<? extends AbstractStub<?>> type;
+		private Class<?> type;
 
 		private String[] basePackages;
 
-		SimpleGrpcClientRegistryCustomizer(String target, String prefix, Class<?>[] types,
-				Class<? extends AbstractStub<?>> type, Class<?>[] basePackageClasses, String[] basePackages) {
+		SimpleGrpcClientRegistryCustomizer(String target, String prefix, Class<?>[] types, Class<?> type,
+				Class<?>[] basePackageClasses, String[] basePackages) {
 			this.target = target;
 			this.prefix = prefix;
 			this.types = types;

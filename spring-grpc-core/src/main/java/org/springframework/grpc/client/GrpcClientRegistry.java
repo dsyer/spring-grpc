@@ -15,26 +15,37 @@
  */
 package org.springframework.grpc.client;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.grpc.internal.ClasspathScanner;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
-import io.grpc.stub.AbstractBlockingStub;
-import io.grpc.stub.AbstractFutureStub;
 import io.grpc.stub.AbstractStub;
 
 public class GrpcClientRegistry {
+
+	private List<StubFactory<?>> factories = new ArrayList<>();
 
 	private final GenericApplicationContext context;
 
 	public GrpcClientRegistry(GenericApplicationContext context) {
 		this.context = context;
+		this.factories.add(new BlockingStubFactory());
+		this.factories.add(new FutureStubFactory());
+		this.factories.add(new ReactorStubFactory());
+		this.factories.add(new SimpleStubFactory());
+		SpringFactoriesLoader.loadFactories(StubFactory.class, getClass().getClassLoader())
+			.forEach(this.factories::add);
+		AnnotationAwareOrderComparator.sort(this.factories);
 	}
 
 	public GrpcClientGroup channel(String name) {
@@ -59,31 +70,12 @@ public class GrpcClientRegistry {
 	}
 
 	private AbstractStub<?> create(Supplier<ManagedChannel> channel, Class<? extends AbstractStub<?>> type) {
-		Class<?> factory = type.getEnclosingClass();
-		if (AbstractBlockingStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, "newBlockingStub");
+		for (StubFactory<? extends AbstractStub<?>> factory : this.factories) {
+			if (factory.supports(type)) {
+				return factory.create(channel, type);
+			}
 		}
-		else if (AbstractFutureStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, "newFutureStub");
-		}
-		else if (type.getSimpleName().startsWith("Reactor")) {
-			return (AbstractStub<?>) createStub(channel, factory, "newReactorStub");
-		}
-		else if (AbstractStub.class.isAssignableFrom(type)) {
-			return (AbstractStub<?>) createStub(channel, factory, "newStub");
-		}
-		else {
-			throw new IllegalArgumentException("Unsupported stub type: " + type);
-		}
-	}
-
-	private Object createStub(Supplier<ManagedChannel> channel, Class<?> factory, String method) {
-		try {
-			return factory.getMethod(method, Channel.class).invoke(null, channel.get());
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Failed to create stub", e);
-		}
+		throw new IllegalArgumentException("Unsupported stub type: " + type);
 	}
 
 	private GrpcChannelFactory channels() {
