@@ -92,16 +92,29 @@ public class GrpcClientRegistry {
 	}
 
 	private <T extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel,
-			Class<T> type) {
-		AnnotationAwareOrderComparator.sort(this.factories);
-		for (StubFactory<? extends AbstractStub<?>> factory : this.factories) {
-			if (factory.supports(type)) {
-				this.beans.put(beanName,
-						new DeferredBeanDefinition<>(type, () -> type.cast(factory.create(channel, type))));
-				return;
+			Class<? extends StubFactory<?>> factoryType, Class<T> type) {
+		StubFactory<? extends AbstractStub<?>> factory = null;
+		if (factoryType != null) {
+			factory = this.factoriesByClass.get(factoryType);
+			if (!factory.supports(type)) {
+				factory = null;
 			}
 		}
-		throw new IllegalArgumentException("Unsupported stub type: " + type);
+		else {
+			AnnotationAwareOrderComparator.sort(this.factories);
+			for (StubFactory<? extends AbstractStub<?>> value : this.factories) {
+				if (value.supports(type)) {
+					factory = value;
+					break;
+				}
+			}
+		}
+		if (factory != null) {
+			StubFactory<? extends AbstractStub<?>> value = factory;
+			this.beans.put(beanName, new DeferredBeanDefinition<>(type, () -> type.cast(value.create(channel, type))));
+			return;
+		}
+		// Ignore unsupported types
 	}
 
 	private GrpcChannelFactory channels() {
@@ -118,6 +131,8 @@ public class GrpcClientRegistry {
 		private final Supplier<ManagedChannel> channel;
 
 		private String prefix = "";
+
+		private Class<? extends StubFactory<?>> factory;
 
 		public GrpcClientGroup(Supplier<ManagedChannel> channel) {
 			this.channel = channel;
@@ -146,26 +161,33 @@ public class GrpcClientRegistry {
 				}
 				@SuppressWarnings("unchecked")
 				Class<T> stub = (Class<T>) type;
-				registerType(beanName, this.channel, stub);
+				registerType(beanName, this.channel, this.factory, stub);
 			}
 			return GrpcClientRegistry.this;
 		}
 
-		public <T extends StubFactory<?>> GrpcClientRegistry scan(Class<T> type, Class<?>... basePackageClasses) {
+		public <T extends StubFactory<?>> GrpcClientRegistry packageClasses(Class<?>... basePackageClasses) {
 			String[] basePackages = new String[basePackageClasses.length];
 			for (int i = 0; i < basePackageClasses.length; i++) {
 				basePackages[i] = ClassUtils.getPackageName(basePackageClasses[i]);
 			}
-			return scan(type, basePackages);
+			return packages(basePackages);
 		}
 
-		public <T extends StubFactory<?>> GrpcClientRegistry scan(Class<T> type, String... basePackages) {
+		public <T extends StubFactory<?>> GrpcClientRegistry packages(String... basePackages) {
 			for (String basePackage : basePackages) {
 				for (Class<?> stub : this.scanner.scan(basePackage, AbstractStub.class)) {
 					register(stub);
 				}
 			}
 			return GrpcClientRegistry.this;
+		}
+
+		public <T extends StubFactory<?>> GrpcClientGroup scan(Class<T> factory) {
+			GrpcClientGroup group = new GrpcClientGroup(this.channel);
+			group.prefix = this.prefix;
+			group.factory = factory;
+			return group;
 		}
 
 		public GrpcClientGroup prefix(String prefix) {

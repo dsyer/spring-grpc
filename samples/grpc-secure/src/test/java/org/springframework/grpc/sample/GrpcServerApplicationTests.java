@@ -119,7 +119,8 @@ public class GrpcServerApplicationTests {
 				.channel("stub",
 						ChannelBuilderOptions.defaults()
 							.withInterceptors(List.of(new BasicAuthenticationInterceptor("user", "user"))))
-				.scan(BlockingStubFactory.class, SimpleGrpc.class);
+				.scan(BlockingStubFactory.class)
+				.packageClasses(SimpleGrpc.class);
 		}
 
 	}

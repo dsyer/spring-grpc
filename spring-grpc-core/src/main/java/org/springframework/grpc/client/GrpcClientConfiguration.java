@@ -91,8 +91,8 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		@Override
 		public void customize(GrpcClientRegistry registry) {
 			registry.channel(this.target).prefix(this.prefix).register(this.types);
-			registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackageClasses);
-			registry.channel(this.target).prefix(this.prefix).scan(this.type, this.basePackages);
+			registry.channel(this.target).prefix(this.prefix).scan(this.type).packageClasses(this.basePackageClasses);
+			registry.channel(this.target).prefix(this.prefix).scan(this.type).packages(this.basePackages);
 		}
 
 	}

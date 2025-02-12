@@ -35,7 +35,7 @@ public @interface GrpcClient {
 
 	Class<? extends AbstractStub<?>>[] types() default {};
 
-	Class<? extends StubFactory<?>> factory() default SimpleStubFactory.class;
+	Class<? extends StubFactory<?>> factory() default BlockingStubFactory.class;
 
 	Class<?>[] basePackageClasses() default {};
 
