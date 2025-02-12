@@ -45,21 +45,21 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		String target = attr.getString("target");
 		String prefix = attr.getString("prefix");
 		Class<?>[] types = attr.getClassArray("types");
-		Class<? extends StubFactory<?>> type = attr.getClass("type");
+		Class<? extends StubFactory<?>> factory = attr.getClass("factory");
 		Class<?>[] basePackageClasses = attr.getClassArray("basePackageClasses");
 		String[] basePackages = attr.getStringArray("basePackages");
 		if (types.length == 0 && basePackageClasses.length == 0 && basePackages.length == 0) {
 			basePackages = new String[] { ClassUtils.getPackageName(meta.getClassName()) };
 		}
-		register(registry, stem, target, prefix, types, type, basePackageClasses, basePackages);
+		register(registry, stem, target, prefix, types, factory, basePackageClasses, basePackages);
 	}
 
 	private void register(BeanDefinitionRegistry registry, String stem, String target, String prefix, Class<?>[] types,
-			Class<? extends StubFactory<?>> type, Class<?>[] basePackageClasses, String[] basePackages) {
+			Class<? extends StubFactory<?>> factory, Class<?>[] basePackageClasses, String[] basePackages) {
 		RootBeanDefinition beanDef = new RootBeanDefinition(SimpleGrpcClientRegistryCustomizer.class);
 		beanDef.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 		String name = target;
-		beanDef.setInstanceSupplier(() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, type,
+		beanDef.setInstanceSupplier(() -> new SimpleGrpcClientRegistryCustomizer(name, prefix, types, factory,
 				basePackageClasses, basePackages));
 		registry.registerBeanDefinition(stem + target, beanDef);
 	}
