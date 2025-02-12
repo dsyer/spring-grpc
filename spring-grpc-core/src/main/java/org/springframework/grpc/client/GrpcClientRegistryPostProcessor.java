@@ -40,8 +40,7 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 		GrpcClientRegistry registry = new GrpcClientRegistry(context);
 		if (context.getBeanNamesForType(GrpcClientRegistryCustomizer.class).length > 0) {
 			List<GrpcClientRegistryCustomizer> values = new ArrayList<>(
-					context.getBeansOfType(GrpcClientRegistryCustomizer.class)
-							.values());
+					context.getBeansOfType(GrpcClientRegistryCustomizer.class).values());
 			AnnotationAwareOrderComparator.sort(values);
 			values.forEach(customizer -> customizer.customize(registry));
 		}
@@ -59,7 +58,8 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		if (applicationContext instanceof GenericApplicationContext generic) {
 			this.context = generic;
-		} else {
+		}
+		else {
 			throw new IllegalStateException("ApplicationContext must be a GenericApplicationContext");
 		}
 	}

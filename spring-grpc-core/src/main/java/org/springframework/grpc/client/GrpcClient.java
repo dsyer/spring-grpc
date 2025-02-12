@@ -17,7 +17,6 @@ package org.springframework.grpc.client;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -27,7 +26,6 @@ import io.grpc.stub.AbstractStub;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-@Repeatable(EnableGrpcClients.class)
 public @interface GrpcClient {
 
 	// TODO: is there a better default value?
@@ -37,7 +35,7 @@ public @interface GrpcClient {
 
 	Class<? extends AbstractStub<?>>[] types() default {};
 
-	Class<? extends StubFactory<?>> type() default SimpleStubFactory.class;
+	Class<? extends StubFactory<?>> factory() default SimpleStubFactory.class;
 
 	Class<?>[] basePackageClasses() default {};
 

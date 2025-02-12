@@ -127,7 +127,8 @@ public class GrpcClientRegistry {
 			String beanName = type.getSimpleName();
 			if (StringUtils.hasText(this.prefix)) {
 				beanName = this.prefix + beanName;
-			} else {
+			}
+			else {
 				beanName = StringUtils.uncapitalize(beanName);
 			}
 			registerBean(beanName, type, () -> factory.apply(this.channel.get()));
@@ -139,7 +140,8 @@ public class GrpcClientRegistry {
 				String beanName = type.getSimpleName();
 				if (StringUtils.hasText(this.prefix)) {
 					beanName = this.prefix + beanName;
-				} else {
+				}
+				else {
 					beanName = StringUtils.uncapitalize(beanName);
 				}
 				@SuppressWarnings("unchecked")
