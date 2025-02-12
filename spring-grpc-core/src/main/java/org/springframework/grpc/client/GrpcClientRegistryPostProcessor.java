@@ -15,12 +15,16 @@
  */
 package org.springframework.grpc.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 
 public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
 
@@ -35,9 +39,11 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 		this.initialized = true;
 		GrpcClientRegistry registry = new GrpcClientRegistry(context);
 		if (context.getBeanNamesForType(GrpcClientRegistryCustomizer.class).length > 0) {
-			context.getBeansOfType(GrpcClientRegistryCustomizer.class)
-				.values()
-				.forEach(customizer -> customizer.customize(registry));
+			List<GrpcClientRegistryCustomizer> values = new ArrayList<>(
+					context.getBeansOfType(GrpcClientRegistryCustomizer.class)
+							.values());
+			AnnotationAwareOrderComparator.sort(values);
+			values.forEach(customizer -> customizer.customize(registry));
 		}
 		registry.close();
 	}
