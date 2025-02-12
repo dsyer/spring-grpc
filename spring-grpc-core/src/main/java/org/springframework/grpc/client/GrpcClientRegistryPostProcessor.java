@@ -59,6 +59,8 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		if (applicationContext instanceof GenericApplicationContext generic) {
 			this.context = generic;
+		} else {
+			throw new IllegalStateException("ApplicationContext must be a GenericApplicationContext");
 		}
 	}
 
