@@ -33,7 +33,7 @@ import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.AbstractStub;
 
-public class GrpcClientRegistry implements AutoCloseable {
+public class GrpcClientRegistry {
 
 	private List<StubFactory<?>> factories = new ArrayList<>();
 
@@ -52,7 +52,6 @@ public class GrpcClientRegistry implements AutoCloseable {
 		SpringFactoriesLoader.loadFactories(StubFactory.class, getClass().getClassLoader()).forEach(this::stubs);
 	}
 
-	@Override
 	public void close() {
 		for (Map.Entry<String, DeferredBeanDefinition<?>> entry : this.beans.entrySet()) {
 			cheekyRegisterBean(entry.getKey(), entry.getValue().type(), entry.getValue().supplier());
