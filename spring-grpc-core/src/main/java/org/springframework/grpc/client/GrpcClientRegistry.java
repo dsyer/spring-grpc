@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.beans.factory.aot.BeanRegistrationAotProcessor;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.io.support.SpringFactoriesLoader;
@@ -63,7 +64,10 @@ public class GrpcClientRegistry {
 	private <T> void cheekyRegisterBean(String key, Class<?> type, Supplier<?> supplier) {
 		Supplier<T> real = (Supplier<T>) supplier;
 		Class<T> stub = (Class<T>) type;
-		this.context.registerBean(key, stub, real, bd -> bd.setLazyInit(true));
+		this.context.registerBean(key, stub, real, bd -> {
+			bd.setLazyInit(true);
+			bd.setAttribute(BeanRegistrationAotProcessor.IGNORE_REGISTRATION_ATTRIBUTE, true);
+		});
 	}
 
 	public GrpcClientRegistry stubs(StubFactory<? extends AbstractStub<?>> factory) {
