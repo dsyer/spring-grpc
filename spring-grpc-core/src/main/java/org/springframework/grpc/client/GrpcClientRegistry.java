@@ -55,13 +55,13 @@ public class GrpcClientRegistry {
 
 	public void close() {
 		for (Map.Entry<String, DeferredBeanDefinition<?>> entry : this.beans.entrySet()) {
-			cheekyRegisterBean(entry.getKey(), entry.getValue().type(), entry.getValue().supplier());
+			registerBean(entry.getKey(), entry.getValue().type(), entry.getValue().supplier());
 		}
 		this.beans.clear();
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> void cheekyRegisterBean(String key, Class<?> type, Supplier<?> supplier) {
+	private <T> void registerBean(String key, Class<?> type, Supplier<?> supplier) {
 		Supplier<T> real = (Supplier<T>) supplier;
 		Class<T> stub = (Class<T>) type;
 		this.context.registerBean(key, stub, real, bd -> {
@@ -91,11 +91,12 @@ public class GrpcClientRegistry {
 		return new GrpcClientGroup(channel);
 	}
 
-	private <T extends AbstractStub<?>> void registerBean(String beanName, Class<T> type, Supplier<T> clientFactory) {
-		this.context.registerBean(beanName, type, clientFactory, bd -> bd.setLazyInit(true));
+	private <T extends AbstractStub<?>> void preRegisterBean(String beanName, Class<T> type,
+			Supplier<T> clientFactory) {
+		this.beans.put(beanName, new DeferredBeanDefinition<>(type, clientFactory));
 	}
 
-	private <T extends AbstractStub<?>> void registerType(String beanName, Supplier<ManagedChannel> channel,
+	private <T extends AbstractStub<?>> void preRegisterType(String beanName, Supplier<ManagedChannel> channel,
 			Class<? extends StubFactory<?>> factoryType, Class<T> type) {
 		StubFactory<? extends AbstractStub<?>> factory = null;
 		if (factoryType != null) {
@@ -150,7 +151,7 @@ public class GrpcClientRegistry {
 			else {
 				beanName = StringUtils.uncapitalize(beanName);
 			}
-			registerBean(beanName, type, () -> factory.apply(this.channel.get()));
+			preRegisterBean(beanName, type, () -> factory.apply(this.channel.get()));
 			return GrpcClientRegistry.this;
 		}
 
@@ -165,7 +166,7 @@ public class GrpcClientRegistry {
 				}
 				@SuppressWarnings("unchecked")
 				Class<T> stub = (Class<T>) type;
-				registerType(beanName, this.channel, this.factory, stub);
+				preRegisterType(beanName, this.channel, this.factory, stub);
 			}
 			return GrpcClientRegistry.this;
 		}
