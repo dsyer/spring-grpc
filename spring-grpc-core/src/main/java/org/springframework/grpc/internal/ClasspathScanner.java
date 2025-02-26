@@ -56,12 +56,15 @@ public class ClasspathScanner implements ResourceLoaderAware {
 
 	public Set<Class<?>> scan(String basePackage, Class<?> type) {
 		Set<Class<?>> candidates = new LinkedHashSet<>();
+		boolean debugEnabled = logger.isDebugEnabled();
+		boolean traceEnabled = logger.isTraceEnabled();
+		if (debugEnabled) {
+			logger.debug("Scanning " + basePackage + " for classes of type " + type.getName());
+		}
 		try {
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
 					+ resolveBasePackage(basePackage) + '/' + this.resourcePattern;
 			Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
-			boolean traceEnabled = logger.isTraceEnabled();
-			boolean debugEnabled = logger.isDebugEnabled();
 			for (Resource resource : resources) {
 				String filename = resource.getFilename();
 				if (filename != null && filename.contains(ClassUtils.CGLIB_CLASS_SEPARATOR)) {
