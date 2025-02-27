@@ -19,8 +19,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.aot.BeanRegistrationAotProcessor;
 import org.springframework.context.support.GenericApplicationContext;
@@ -57,7 +59,10 @@ public class GrpcClientRegistry {
 		for (Map.Entry<String, DeferredBeanDefinition<?>> entry : this.beans.entrySet()) {
 			registerBean(entry.getKey(), entry.getValue().type(), entry.getValue().supplier());
 		}
-		this.beans.clear();
+	}
+
+	Set<Class<?>> getTypes() {
+		return this.beans.values().stream().map(DeferredBeanDefinition::type).collect(Collectors.toSet());
 	}
 
 	@SuppressWarnings("unchecked")

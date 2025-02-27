@@ -32,19 +32,21 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 
 	private boolean initialized = false;
 
+	private GrpcClientRegistry registry;
+
 	private void initialize(GenericApplicationContext context) {
 		if (this.initialized) {
 			return;
 		}
 		this.initialized = true;
-		GrpcClientRegistry registry = new GrpcClientRegistry(context);
+		this.registry = new GrpcClientRegistry(context);
 		if (context.getBeanNamesForType(GrpcClientRegistryCustomizer.class).length > 0) {
 			List<GrpcClientRegistryCustomizer> values = new ArrayList<>(
 					context.getBeansOfType(GrpcClientRegistryCustomizer.class).values());
 			AnnotationAwareOrderComparator.sort(values);
 			values.forEach(customizer -> customizer.customize(registry));
 		}
-		registry.close();
+		this.registry.close();
 	}
 
 	@Override

@@ -1,17 +1,5 @@
 [
 	{
-		"name": "org.springframework.grpc.sample.proto.SimpleGrpc",
-		"allPublicMethods": true
-	},
-	{
-		"name": "org.springframework.grpc.sample.proto.HelloReply",
-		"allPublicMethods": true
-	},
-	{
-		"name": "org.springframework.grpc.sample.proto.HelloReply$Builder",
-		"allPublicMethods": true
-	},
-	{
 		"name": "java.time.Instant",
 		"allPublicMethods": true
 	}
