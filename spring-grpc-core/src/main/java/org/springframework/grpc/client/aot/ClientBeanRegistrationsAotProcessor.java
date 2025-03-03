@@ -38,7 +38,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import com.google.protobuf.AbstractMessage;
-
 import io.grpc.stub.AbstractStub;
 
 public class ClientBeanRegistrationsAotProcessor implements BeanFactoryInitializationAotProcessor {
@@ -107,7 +106,7 @@ public class ClientBeanRegistrationsAotProcessor implements BeanFactoryInitializ
 
 		private Set<Class<?>> resources;
 
-		public ClientBeanRegistrationsAotContribution(Set<Type> types, Set<Class<?>> resources) {
+		ClientBeanRegistrationsAotContribution(Set<Type> types, Set<Class<?>> resources) {
 			this.types = types;
 			this.resources = resources;
 		}

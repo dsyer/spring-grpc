@@ -64,8 +64,7 @@ public class GrpcClientConfiguration implements ImportBeanDefinitionRegistrar {
 		registry.registerBeanDefinition(stem + target, beanDef);
 	}
 
-	static class SimpleGrpcClientRegistryCustomizer
-			implements GrpcClientRegistryCustomizer {
+	static class SimpleGrpcClientRegistryCustomizer implements GrpcClientRegistryCustomizer {
 
 		private String target;
 

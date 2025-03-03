@@ -44,7 +44,7 @@ public class GrpcClientRegistryPostProcessor implements BeanDefinitionRegistryPo
 			List<GrpcClientRegistryCustomizer> values = new ArrayList<>(
 					context.getBeansOfType(GrpcClientRegistryCustomizer.class).values());
 			AnnotationAwareOrderComparator.sort(values);
-			values.forEach(customizer -> customizer.customize(registry));
+			values.forEach(customizer -> customizer.customize(this.registry));
 		}
 		this.registry.close();
 	}
