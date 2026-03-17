@@ -51,12 +51,12 @@ import io.grpc.protobuf.services.HealthStatusManager;
 /**
  * Integration tests for gRPC server health feature.
  */
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 class GrpcServerHealthIntegrationTests {
 
 	@Nested
-	@SpringBootTest(properties = { "spring.grpc.server.address=0.0.0.0:0",
-			"spring.grpc.client.channel.health-test.target=static://0.0.0.0:${local.grpc.sever.port}",
+	@SpringBootTest(properties = { "spring.grpc.server.port=0",
+			"spring.grpc.client.channel.health-test.target=static://0.0.0.0:${local.grpc.server.port}",
 			"spring.grpc.client.channel.health-test.health.enabled=true",
 			"spring.grpc.client.channel.health-test.health.service-name=my-service" })
 	@DirtiesContext

@@ -16,10 +16,10 @@ import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = { "spring.grpc.client.channel.default.target=0.0.0.0:${local.grpc.sever.port}",
-				"spring.grpc.server.address=0.0.0.0:0" })
+		properties = { "spring.grpc.client.channel.default.target=0.0.0.0:${local.grpc.server.port}",
+				"spring.grpc.server.port=0" })
 @DirtiesContext
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 public class GrpcServerApplicationTests {
 
 	private static Log log = LogFactory.getLog(GrpcServerApplicationTests.class);

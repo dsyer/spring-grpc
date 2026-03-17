@@ -20,8 +20,8 @@ import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-		properties = { "spring.grpc.server.servlet.enabled=false", "spring.grpc.server.address=0.0.0.0:0" })
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+		properties = { "spring.grpc.server.servlet.enabled=false", "spring.grpc.server.port=0" })
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 public class ListenOnTwoPortsTests {
 
 	private static Log log = LogFactory.getLog(ListenOnTwoPortsTests.class);
