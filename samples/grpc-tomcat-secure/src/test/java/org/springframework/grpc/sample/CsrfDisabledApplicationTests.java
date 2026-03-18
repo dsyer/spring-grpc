@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.grpc.client.ChannelBuilderOptions;
 import org.springframework.grpc.client.GrpcChannelFactory;
+import org.springframework.grpc.client.ImportGrpcClients;
 import org.springframework.grpc.client.interceptor.security.BasicAuthenticationInterceptor;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
@@ -37,7 +38,7 @@ import io.grpc.StatusRuntimeException;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 		properties = "spring.grpc.client.channel.default.target=0.0.0.0:${local.server.port}")
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 public class CsrfDisabledApplicationTests {
 
 	private static Log log = LogFactory.getLog(CsrfDisabledApplicationTests.class);
@@ -76,6 +77,7 @@ public class CsrfDisabledApplicationTests {
 	}
 
 	@TestConfiguration
+	@ImportGrpcClients(basePackageClasses = GrpcServerApplication.class)
 	@RestController
 	static class ExtraConfiguration {
 
