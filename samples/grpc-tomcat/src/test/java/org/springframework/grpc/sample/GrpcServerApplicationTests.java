@@ -11,15 +11,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.grpc.client.ImportGrpcClients;
 import org.springframework.grpc.sample.proto.HelloReply;
 import org.springframework.grpc.sample.proto.HelloRequest;
 import org.springframework.grpc.sample.proto.SimpleGrpc;
 import org.springframework.test.annotation.DirtiesContext;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-		properties = { "spring.grpc.client.channel.default.target=0.0.0.0:${local.server.port}", "stream.count=2" })
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+		"spring.grpc.client.channel.default.target=0.0.0.0:${local.server.port}", "stream.count=2" })
 @DirtiesContext
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 public class GrpcServerApplicationTests {
 
 	private static Log log = LogFactory.getLog(GrpcServerApplicationTests.class);
@@ -49,6 +51,11 @@ public class GrpcServerApplicationTests {
 		while (response.hasNext()) {
 			log.info(response.next().getMessage());
 		}
+	}
+
+	@TestConfiguration
+	@ImportGrpcClients(basePackageClasses = GrpcServerApplication.class)
+	static class ExtraConfiguration {
 	}
 
 }
