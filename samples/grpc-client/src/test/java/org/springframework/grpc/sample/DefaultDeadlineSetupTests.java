@@ -28,11 +28,11 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 @ImportGrpcClients
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 public class DefaultDeadlineSetupTests {
 
 	@Nested
-	@SpringBootTest(properties = "spring.grpc.client.channel.default.default-deadline=1s")
+	@SpringBootTest(properties = "spring.grpc.client.channel.default.default.deadline=1s")
 	@DirtiesContext
 	@EnabledIf("serverJarAvailable")
 	class Deadline {
@@ -80,7 +80,7 @@ public class DefaultDeadlineSetupTests {
 	}
 
 	@Nested
-	@SpringBootTest(properties = "spring.grpc.client.channel.default.default-deadline=1s")
+	@SpringBootTest(properties = "spring.grpc.client.channel.default.default.deadline=1s")
 	@DirtiesContext
 	@EnabledIf("serverJarAvailable")
 	class WithoutDeadline {
