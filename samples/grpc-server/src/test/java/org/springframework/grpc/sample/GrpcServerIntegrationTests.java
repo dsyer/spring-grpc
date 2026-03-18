@@ -328,8 +328,8 @@ class GrpcServerIntegrationTests {
 	@Nested
 	@SpringBootTest(properties = { "spring.grpc.server.port=0",
 			"spring.grpc.client.channel.test-channel.target=static://0.0.0.0:${local.grpc.server.port}",
-			"spring.grpc.client.channel.test-channel.negotiation-type=TLS",
-			"spring.grpc.client.channel.test-channel.secure=false" })
+			"spring.grpc.client.channel.test-channel.ssl.enabled=true",
+			"spring.grpc.client.channel.test-channel.bypass-certificate-validation=true" })
 	@ActiveProfiles("ssl")
 	@DirtiesContext
 	class ServerWithSsl {
@@ -343,12 +343,11 @@ class GrpcServerIntegrationTests {
 	}
 
 	@Nested
-	@SpringBootTest(properties = { "spring.grpc.server.port=0", "spring.grpc.server.ssl.client-auth=REQUIRE",
+	@SpringBootTest(properties = { "spring.grpc.server.port=0", "spring.grpc.server.ssl.client-auth=require",
 			"spring.grpc.server.ssl.secure=false",
 			"spring.grpc.client.channel.test-channel.target=static://0.0.0.0:${local.grpc.server.port}",
 			"spring.grpc.client.channel.test-channel.ssl.bundle=ssltest",
-			"spring.grpc.client.channel.test-channel.negotiation-type=TLS",
-			"spring.grpc.client.channel.test-channel.ssl.secure=false" })
+			"spring.grpc.client.channel.test-channel.bypass-certificate-validation=true" })
 	@ActiveProfiles("ssl")
 	@DirtiesContext
 	// @Disabled("Need to migrate to Spring Boot 4.1.x")

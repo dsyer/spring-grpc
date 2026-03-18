@@ -112,9 +112,8 @@ class GrpcServerHealthIntegrationTests {
 	}
 
 	@Nested
-	@SpringBootTest(properties = { "spring.grpc.server.health.actuator.health-indicator-paths=custom",
-			"spring.grpc.server.health.actuator.update-initial-delay=3s",
-			"spring.grpc.server.health.actuator.update-rate=3s", "management.health.defaults.enabled=true" })
+	@SpringBootTest(properties = { "spring.grpc.server.health.service.custom.include=custom",
+			"spring.grpc.server.health.schedule.delay=3s", "spring.grpc.server.health.schedule.period=3s" })
 	@AutoConfigureTestGrpcTransport
 	@DirtiesContext
 	class WithActuatorHealthAdapter {
