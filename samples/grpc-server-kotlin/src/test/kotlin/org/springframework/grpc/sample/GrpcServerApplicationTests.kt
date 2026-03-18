@@ -18,7 +18,7 @@ import org.springframework.test.annotation.DirtiesContext
     ],
 )
 @DirtiesContext
-@Disabled("Need to migrate to Spring Boot 4.1.x")
+// @Disabled("Need to migrate to Spring Boot 4.1.x")
 class GrpcServerApplicationTests {
 
     private val log: Log = LogFactory.getLog(this.javaClass)
